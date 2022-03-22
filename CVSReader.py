@@ -1,38 +1,59 @@
-import csv
-import matplotlib.pyplot as plt
-import numpy as np
+import random
+from dataclasses import dataclass
 
-file = open("data.csv")
-csvreader = csv.reader(file)
-header = next(csvreader)
-print(header)
-rows = []
-x = []
-y = []
+a=1
+b=1
+c=1
 
-def sortFunc(e):
-    return e[0]
+datapoints = []
 
-for row in csvreader:
-    rows.append(row)
+@dataclass
+class Datapoint:
+    x: float
+    y: float
 
-rows.sort(key=sortFunc)
+# beregn y til x med globale a og b, hvis de ikke er givet i funktionskaldet
+def f(x,_a=a,_b=b,_c=c):
+    """funktionen til at optmiere"""
+    # return _b*pow(x, _a)
+    return _a*x*x+_b*x+_c
 
-# for at printe hvad der står i en matrix. 
-for row in rows:
-    cols = row[0].split(";")
-    x.append(float(cols[0]))
-    y.append(float(cols[1]))
+# Returner error ud fra variabelr
+def e(_a,_b,_c):
+    """angiv error"""
 
-# Her for at plotte det dataen.  
+    _sum = 0
+    for dp in datapoints:
+        value = dp.y-f(dp.x, _a=_a, _b=_b, _c=_c)
+        value *= value
+        _sum += value
+    return _sum
 
-#plt.scatter(x, y)
-plt.plot(x, y, 'o')
-m, b = np.polyfit(x, y, 1)
-m = int(m)
-plt.plot(x, m*x+b)
+    #return sum([pow(_y-f(_x, _a=a, _b=b),2) for _x,_y in zip(x,y)])
 
-plt.show()
+def main():
+    """main funktionen"""
+    with open("data.csv", "r", encoding="utf-8") as file:
+        for line in file:
+            _x, _y = line.split(";")
+            _x, _y = float(_x), float(_y)
+            datapoints.append(Datapoint(_x, _y))
 
-file.close()
+    # iteratikt prøv at forbedre erroren
+    last_error = 9e9999999
+    for _ in range(10240000):
+        global a, b, c
+        _a, _b, _c = a, b, c
+        _a += random.uniform(-1, 1) * 20
+        _b += random.uniform(-1, 1) * 20
+        _c += random.uniform(-1, 1) * 20
+        error = e(_a,_b,_c)
+        if abs(error) < abs(last_error):
+            a, b, c = _a, _b, _c
+            last_error = error
 
+    print(f"f(x)={a}x^2+{b}x+{c}")
+
+
+if __name__ == "__main__":
+    main()
